@@ -141,10 +141,15 @@ Key test cases:
 
 ## Performance
 
-```bash
+```bash 
+# Terminal 1 — start the server first
 cd service
-python benchmark.py   # requires server running on :8000
-```
+uvicorn app:app --port 8000
+
+# Terminal 2 — then run the benchmark
+cd service
+python benchmark.py
+``` 
 
 Typical results (1000 docs ingested, 200 search queries):
 ```
