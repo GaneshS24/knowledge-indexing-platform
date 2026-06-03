@@ -79,6 +79,7 @@ Two demo tenants are pre-seeded on startup:
 | `tenant-beta`  | `key-beta-secret`  |
 
 **Swagger UI:** http://localhost:8000/docs
+Note: Swagger UI is only accessible when the server is running locally. Start the server with the steps above, then open the link in your browser.
 
 ---
 
