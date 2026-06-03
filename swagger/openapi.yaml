@@ -1,0 +1,307 @@
+openapi: "3.0.3"
+info:
+  title: Knowledge Indexing Platform
+  version: "1.0.0"
+  description: |
+    Multi-tenant document ingestion and full-text search service.
+
+    ## Authentication
+    All `/tenants/{tenantId}/*` endpoints require an `X-API-Key` header.
+    The API key must belong to the tenant specified in the path — cross-tenant
+    access is rejected with `403 Forbidden`.
+
+    ## Demo Tenants
+    | Tenant ID       | API Key             |
+    |-----------------|---------------------|
+    | `tenant-alpha`  | `key-alpha-secret`  |
+    | `tenant-beta`   | `key-beta-secret`   |
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+security: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    DocumentCreate:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "Introduction to Machine Learning"
+        content:
+          type: string
+          minLength: 1
+          example: "Machine learning is a subset of artificial intelligence..."
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 20
+          example: ["ml", "ai", "tutorial"]
+
+    DocumentCreatedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tenant_id:
+          type: string
+          example: "tenant-alpha"
+        message:
+          type: string
+          example: "Document created successfully"
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        title:
+          type: string
+        content_snippet:
+          type: string
+          description: First 200 characters of the document content
+        tags:
+          type: array
+          items:
+            type: string
+        relevance_score:
+          type: number
+          format: float
+          description: BM25 relevance score (higher = more relevant)
+        created_at:
+          type: string
+          format: date-time
+
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        total:
+          type: integer
+          description: Total matching documents (before pagination)
+        limit:
+          type: integer
+        offset:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        database:
+          type: string
+          enum: [ok, error]
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    TenantMetrics:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        request_count:
+          type: integer
+        avg_response_time_ms:
+          type: number
+        document_count:
+          type: integer
+        error_count:
+          type: integer
+        error_rate:
+          type: number
+
+    MetricsResponse:
+      type: object
+      properties:
+        uptime_seconds:
+          type: number
+        total_requests:
+          type: integer
+        tenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantMetrics'
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns service health status. No authentication required.
+      operationId: healthCheck
+      tags: [Operations]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /metrics:
+    get:
+      summary: Service metrics
+      description: Per-tenant request counts, latency, document counts, and error rates.
+      operationId: getMetrics
+      tags: [Operations]
+      responses:
+        "200":
+          description: Metrics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  /tenants/{tenantId}/documents:
+    post:
+      summary: Ingest a document
+      description: |
+        Store a document for the tenant. The document is immediately indexed
+        for full-text search using SQLite FTS5 (BM25).
+      operationId: createDocument
+      tags: [Documents]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: tenant-alpha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreate'
+            example:
+              title: "Quarterly Report Q4 2024"
+              content: "Revenue increased by 15% year-over-year driven by enterprise sales..."
+              tags: ["finance", "q4", "report"]
+      responses:
+        "201":
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentCreatedResponse'
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "403":
+          description: API key does not belong to this tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tenants/{tenantId}/documents/search:
+    get:
+      summary: Search documents
+      description: |
+        Full-text BM25 search across tenant documents. Results are strictly
+        isolated to the authenticated tenant. Supports pagination.
+      operationId: searchDocuments
+      tags: [Documents]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: tenant-alpha
+        - name: q
+          in: query
+          required: true
+          description: Search query string
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 500
+          example: "machine learning"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum results to return (default 10, max 100)
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          description: Pagination offset (default 0)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "403":
+          description: Tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -1,0 +1,26 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+
+# Test artifacts
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Database files
+*.db
+
+# Environment
+.env
+.venv/
+venv/
+
+# Terraform state (never commit these)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# OS
+.DS_Store
