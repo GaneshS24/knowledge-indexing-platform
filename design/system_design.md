@@ -10,28 +10,28 @@ My design draws on direct experience building multi-region provisioning systems,
 
 ```
                     ┌──────────────────────────────────────────────┐
-                    │               Client Layer                    │
+                    │               Client Layer                   │
                     │   Enterprise Apps / SDKs / Direct API Users  │
                     └──────────────────┬───────────────────────────┘
                                        │ HTTPS / TLS 1.3
                     ┌──────────────────▼───────────────────────────┐
-                    │            API Gateway + WAF                  │
-                    │   Rate limiting · TLS termination · Routing   │
+                    │            API Gateway + WAF                 │
+                    │   Rate limiting · TLS termination · Routing  │
                     └──────────────────┬───────────────────────────┘
                                        │
                     ┌──────────────────▼───────────────────────────┐
-                    │         Auth Middleware (API Key / JWT)       │
-                    │   Validates key → injects tenant_id context   │
+                    │         Auth Middleware (API Key / JWT)      │
+                    │   Validates key → injects tenant_id context  │
                     └──────┬───────────────────────┬───────────────┘
                            │                       │
           ┌────────────────▼──────┐   ┌────────────▼──────────────┐
-          │   Ingestion Service   │   │      Search Service        │
-          │   (Python / FastAPI)  │   │   (Python / FastAPI)       │
+          │   Ingestion Service   │   │      Search Service       │
+          │   (Python / FastAPI)  │   │   (Python / FastAPI)      │
           └────────────┬──────────┘   └────────────┬──────────────┘
                        │                            │
           ┌────────────▼──────────┐   ┌────────────▼──────────────┐
-          │   Async Work Queue    │   │   PostgreSQL FTS / SQLite  │
-          │ (OCI Queue / SQS)     │   │   (per-tenant RLS)         │
+          │   Async Work Queue    │   │   PostgreSQL FTS / SQLite │
+          │ (OCI Queue / SQS)     │   │   (per-tenant RLS)        │
           └────────────┬──────────┘   └───────────────────────────┘
                        │
           ┌────────────▼──────────┐   ┌───────────────────────────┐
@@ -41,11 +41,11 @@ My design draws on direct experience building multi-region provisioning systems,
                        │
           ┌────────────▼──────────┐   ┌───────────────────────────┐
           │   PostgreSQL (Aurora) │   │   KMS (OCI Vault / AWS)   │
-          │   metadata + RLS      │   │   Per-tenant encryption    │
+          │   metadata + RLS      │   │   Per-tenant encryption   │
           └───────────────────────┘   └───────────────────────────┘
 
           ┌──────────────────────────────────────────────────────┐
-          │          Observability Layer                          │
+          │          Observability Layer                         │
           │   Structured logs · Metrics (Grafana) · Audit trail  │
           └──────────────────────────────────────────────────────┘
 ```
