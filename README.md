@@ -153,8 +153,18 @@ python benchmark.py
 
 Typical results (1000 docs ingested, 200 search queries):
 ```
-=== Ingestion ===  ~2s total, ~2ms/doc
-=== Search    ===  avg ~4ms, p95 ~8ms   ✓ well under 100ms target
+=== Ingestion Benchmark (1000 docs) ===
+Total:    5.49s
+Rate:     182.3 docs/sec
+Avg:      5.5 ms/doc
+
+=== Search Benchmark (200 queries) ===
+Min:      8.0 ms
+Avg:      9.7 ms
+p95:      11.9 ms
+p99:      13.6 ms
+Max:      13.6 ms
+✓ p95 under 100ms target
 ```
 
 ---
