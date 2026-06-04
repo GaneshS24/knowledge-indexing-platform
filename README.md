@@ -1,6 +1,6 @@
 # Knowledge Indexing Platform
 
-A multi-tenant document ingestion and full-text search service built as a proof-of-concept implementation for the Director, Platform Engineering assessment.
+A multi-tenant document ingestion and full-text search service built as a proof-of-concept implementation.
 
 My background is in large-scale distributed infrastructure (Oracle Exadata Cloud, 20+ years), Python systems programming, OCI/cloud platform engineering, and FedRAMP-aligned security design. This submission reflects patterns I've used in production, adapted to this problem.
 
